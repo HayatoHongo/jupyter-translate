@@ -7,6 +7,10 @@ from deep_translator import (
 from tqdm import tqdm  # For progress bar
 from time import sleep
 
+# ---- 追加インポート（ファイル冒頭付近に） -----------------
+import openai, backoff, os, time
+# -----------------------------------------------------------
+
 # Função para selecionar o tradutor com base no nome
 def get_translator(translator_name, src_language, dest_language):
     translators = {
@@ -64,88 +68,52 @@ def safe_translate(translator, text, retries=3, delay=10):
             sleep(delay)
     raise Exception(f"Failed to translate after {retries} attempts.")
 
-def translate_markdown(text, translator, delay):
-    # Regex expressions
-    MD_CODE_REGEX = r'```[a-z]*\n[\s\S]*?\n```'
-    CODE_REPLACEMENT_KW = r'xx_markdown_code_xx'
-    
-    MD_LINK_REGEX = r'\[([^\]]+)\]\(([^)]+)\)'
-    LINK_REPLACEMENT_KW = 'xx_markdown_link_xx'
+def translate_markdown(text: str,
+                       translator,       # ※互換用・未使用
+                       delay: int,
+                       model: str = "gpt-3.5-turbo"
+                      ) -> str:
+    """
+    Translate one Markdown cell as-is with ChatGPT.
+    The whole *text* is sent in a single request together with
+    the base prompt “translate into English”.
+    """
+    if not text.strip():
+        return text   # 空セルはそのまま返す
 
-    # Markdown tags
-    END_LINE = '\n'
-    IMG_PREFIX = '!['
-    HEADERS = ['### ', '###', '## ', '##', '# ', '#']  # Should be from this order (bigger to smaller)
+    # --- OpenAI key ---
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    if not openai.api_key:
+        raise RuntimeError("OPENAI_API_KEY environment variable not set")
 
-    print(f"Processing markdown text: {text[:30]}...")  # Debug
+    # --- リトライ付き API 呼び出し ---------------------------
+    @backoff.on_exception(backoff.expo,
+                          (openai.error.RateLimitError,
+                           openai.error.APIError,
+                           openai.error.Timeout),
+                          max_tries=3)
+    def _chat_completion(markdown_src: str) -> str:
+        messages = [
+            # system プロンプトを使う方が安定する
+            {"role": "system",
+             "content": "You are a helpful assistant that translates text."},
+            {"role": "user",
+             "content": f"translate into English:\n\n{markdown_src}"}
+        ]
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            temperature=0.2  # 翻訳なので低め
+        )
+        return response.choices[0].message.content.strip()
 
-    # Inner function to replace tags from text from a source list
-    def replace_from_list(tag, text, replacement_list):
-        if not replacement_list:
-            return text
-        replacement_list = list(replacement_list)  # Ensure it's a list
-        replacement_iter = iter(replacement_list)
-        
-        def replace_match(match):
-            nonlocal replacement_iter
-            try:
-                return next(replacement_iter)
-            except StopIteration:
-                # Reset iterator if we ran out of replacements
-                replacement_iter = iter(replacement_list)
-                return next(replacement_iter)
-                
-        return re.sub(tag, replace_match, text)
+    translated = _chat_completion(text)
 
-    # Inner function for translation
-    def translate(text):
-        # Get all markdown links
-        md_links = re.findall(MD_LINK_REGEX, text)
-        print(f"Found {len(md_links)} markdown links")  # Debug
+    # Markdown セル末尾が改行で終わっていたら揃える
+    if text.endswith("\n") and not translated.endswith("\n"):
+        translated += "\n"
 
-        # Get all markdown code blocks
-        md_codes = re.findall(MD_CODE_REGEX, text)
-        print(f"Found {len(md_codes)} markdown code blocks")  # Debug
-
-        # Replace markdown links in text to markdown_link
-        text = re.sub(MD_LINK_REGEX, LINK_REPLACEMENT_KW, text)
-
-        # Replace links in markdown to tag markdown_link
-        text = re.sub(MD_CODE_REGEX, CODE_REPLACEMENT_KW, text)
-
-        print(f"Text after replacements (before translation): {text[:50]}...")  # Debug
-
-        # Translate text
-        text = safe_translate(translator, text, delay=delay)
-
-        print(f"Text after translation: {text[:50]}...")  # Debug
-
-        # Replace tags to original link tags
-        if md_links:
-            # Reconstruct the original markdown links
-            original_links = [f"[{title}]({url})" for title, url in md_links]
-            text = replace_from_list(LINK_REPLACEMENT_KW, text, original_links)
-
-        # Replace code tags
-        if md_codes:
-            text = replace_from_list(CODE_REPLACEMENT_KW, text, md_codes)
-
-        return text
-
-    # Check if there are special Markdown tags
-    if len(text) >= 2:
-        if text[-1:] == END_LINE:
-            return translate(text) + '\n'
-
-        if text[:2] == IMG_PREFIX:
-            return text
-
-        for header in HEADERS:
-            len_header = len(header)
-            if text[:len_header] == header:
-                return header + translate(text[len_header:])
-
-    return translate(text)
+    return translated
 
 def translate_code_comments_and_prints(code, translator, delay):
     if not code or code.isspace():
