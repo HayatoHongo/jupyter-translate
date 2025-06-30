@@ -1,132 +1,223 @@
-# Jupyter Translate: a Python script for translating Jupyter notebook files
+以下は **英語版と日本語版を分けた `README.md` 完成版** です。
 
-[version 2024]
+そのままリポジトリに配置可能で、
+日英ユーザーどちらにも対応できる形に整えています。
 
-This script was created as a general-purpose translator for Jupyter notebooks, translating across different languages (the default source language is English). Install it with:
-```
-pip install jupyter_translate
-```
+---
 
-After installed, you can use it but running the following command in the terminal:
+````markdown
+# 📘 Jupyter Translate: A Jupyter Notebook Translation Tool (ChatGPT Ready)
 
-```
-jupyter_translate tests/data/test_Notebook_en.ipynb --target pt
-```
-A new file named `test_Notebook_en_pt.ipynb` will be created (or the code of the language you decided to use). 
+---
 
-### Translate Multiple Notebooks in a Directory
+## ✅ Overview
 
-You can translate all notebooks in a directory by using the `--directory` flag or by simply providing a directory path:
+This project improves upon:  
+https://github.com/WittmannF/jupyter-translate.git
 
-```
-jupyter_translate tests/data --target es --directory
-```
+---
 
-By default, this will recursively traverse all subdirectories. If you want to translate only the notebooks in the specified directory (without subdirectories), add the `--no-recursive` flag:
+### 🌱 Features
 
-```
-jupyter_translate tests/data --target es --directory --no-recursive
-```
+- Natural translation for Markdown using **ChatGPT API (GPT-4.1)**  
+- Uses **Google Translator** for `print` and `#` in code  
+- **Handles large notebooks in about 10 minutes**  
+  - Markdown: 500 cells  
+  - Code: 300 cells
 
-You can also translate notebooks from/to any language:
-```
-jupyter_translate tests/data/test_Notebook_pt.ipynb --source pt --target en
-```
+---
 
-The program translates markdown content, comments in code cells, and messages formatted in  `print(f" ... ")`. 
+## ✅ How to Use
 
-## Translator Options:
+1️⃣ **Clone this repo**
+```bash
+git clone https://github.com/xxxxxx/jupyter-translate.git
+cd jupyter-translate
+````
 
-By default, jupyter-translate uses [googletrans](https://py-googletrans.readthedocs.io/en/latest/) on its backend. However, you can specify a different translator using the --translator option. Here's how to use it:
+2️⃣ **Create a virtual environment**
 
-```
-jupyter_translate test_Notebook_en.ipynb --target pt --translator='mymemory'
-```
-Currently supported translators are:
-* google (default)
-* mymemory
- <br> 
-**Caution:** If you are using `mymemory` as backend translator, the language codes are different. The script will show you the codes. Make sure to specify the correct `--source` and `--target` language codes supported by the selected translator. The --language option can be set to any of the following (codes from default `googletrans`:
-
-| Code   | Language              | Code   | Language               | Code   | Language             | Code   | Language          |
-|--------|-----------------------|--------|------------------------|--------|----------------------|--------|-------------------|
-| af     | afrikaans              | sq     | albanian               | am     | amharic              | ar     | arabic            |
-| hy     | armenian               | az     | azerbaijani            | eu     | basque               | be     | belarusian        |
-| bn     | bengali                | bs     | bosnian                | bg     | bulgarian            | ca     | catalan           |
-| ceb    | cebuano                | ny     | chichewa               | zh-cn  | chinese (simplified) | zh-tw  | chinese (traditional) |
-| co     | corsican               | hr     | croatian               | cs     | czech                | da     | danish            |
-| nl     | dutch                  | en     | english                | eo     | esperanto            | et     | estonian          |
-| tl     | filipino               | fi     | finnish                | fr     | french               | fy     | frisian           |
-| gl     | galician               | ka     | georgian               | de     | german               | el     | greek             |
-| gu     | gujarati               | ht     | haitian creole         | ha     | hausa                | haw    | hawaiian          |
-| iw     | hebrew                 | hi     | hindi                  | hmn    | hmong                | hu     | hungarian         |
-| is     | icelandic              | ig     | igbo                   | id     | indonesian           | ga     | irish             |
-| it     | italian                | ja     | japanese               | jw     | javanese             | kn     | kannada           |
-| kk     | kazakh                 | km     | khmer                  | ko     | korean               | ku     | kurdish (kurmanji)|
-| ky     | kyrgyz                 | lo     | lao                    | la     | latin                | lv     | latvian           |
-| lt     | lithuanian             | lb     | luxembourgish          | mk     | macedonian           | mg     | malagasy          |
-| ms     | malay                  | ml     | malayalam              | mt     | maltese              | mi     | maori             |
-| mr     | marathi                | mn     | mongolian              | my     | myanmar (burmese)    | ne     | nepali            |
-| no     | norwegian              | ps     | pashto                 | fa     | persian              | pl     | polish            |
-| pt     | portuguese             | pa     | punjabi                | ro     | romanian             | ru     | russian           |
-| sm     | samoan                 | gd     | scots gaelic           | sr     | serbian              | st     | sesotho           |
-| sn     | shona                  | sd     | sindhi                 | si     | sinhala              | sk     | slovak            |
-| sl     | slovenian              | so     | somali                 | es     | spanish              | su     | sundanese         |
-| sw     | swahili                | sv     | swedish                | tg     | tajik                | ta     | tamil             |
-| te     | telugu                 | th     | thai                   | tr     | turkish              | uk     | ukrainian         |
-| ur     | urdu                   | uz     | uzbek                  | vi     | vietnamese           | cy     | welsh             |
-| xh     | xhosa                  | yi     | yiddish                | yo     | yoruba               | zu     | zulu              |
-| fil    | Filipino               | he     | Hebrew                 |        |                      |        |                   |
-
-### Other options:
-
-`--delay`:<br>
-The delay in seconds between retries in case of connection issues. The default is 10 seconds. Adjusting this can help if you're facing connectivity issues, especially behind firewalls.
-```
-jupyter_translate my_notebook.ipynb --target es --delay=15
+```bash
+python3 -m venv venv
 ```
 
-`--rename`:<br>
-If specified, this option will rename the original notebook file after the translation is complete. This can be useful if you want to keep the translated version as the primary file.
-```
-jupyter_translate my_notebook.ipynb --target es --rename
+3️⃣ **Activate the virtual environment**
+
+```bash
+source venv/bin/activate        # Mac / Linux
+venv\Scripts\activate           # Windows
 ```
 
-`--print`:<br>
-Use this option if you want to print the translations directly to the console as they happen.
-```
-jupyter_translate my_notebook.ipynb --target es --print
+4️⃣ **Install dependencies**
+
+```bash
+pip install -r requirements.txt
 ```
 
-`--directory`:<br>
-Process all .ipynb files in the specified directory. This can be used with a directory path to translate all notebooks in that location.
+5️⃣ **Set your OpenAI API key**
+
+Create `.env` next to `jupyter_translate.py`:
+
 ```
-jupyter_translate notebooks_dir/ --target es --directory
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
 ```
 
-`--no-recursive`:<br>
-When used with `--directory`, this flag prevents subdirectories from being processed. Only notebooks in the specified directory will be translated.
-```
-jupyter_translate notebooks_dir/ --target es --directory --no-recursive
-```
+6️⃣ **Place the notebook you want to translate**
 
-## Implementation notes:
+7️⃣ **Run the translation**
 
-To set up a working Conda environment to use this tool, you must install a newer version of `deep-translator` via pip, as well as a few other libraries. You can do this with the included environment file. In your terminal, enter:
-```
-conda env create --file environment.yml
-conda activate jtranslate
+Japanese → English:
+
+```bash
+python3 -m jupyter_translate YOUR_NOTEBOOK_NAME.ipynb --source ja --target en
 ```
 
-You can also reset the environment by running:
+> On Windows, use `python` instead of `python3`.
+
+---
+
+## ✅ Customizing Translation
+
+`prompt.json` is key for tuning tone and quality.
+
+Currently optimized for Japanese to English. Adjust it as you like.
+
+---
+
+## ✅ Key Points of prompt.json
+
+* Breaks into short, natural English
+* Keeps Markdown formatting
+* Bright, casual tone
+* Uses easy, junior-high-level English
+* Adds idioms or metaphors for punch
+* Uses \$ only for variables in LaTeX
+* Translates 教材 as “tutorial”
+* Adds \n at the end of code blocks
+* Avoids using “We”
+
+---
+
+## ✅ Thanks
+
+Thanks to the creator of the original repository.
+
+---
+
+## ✅ License
+
+MIT License
+
+---
+
+✨ Happy translating your notebooks with **Jupyter Translate**! ✨
+
+---
+
+# 📘 Jupyter Translate: Jupyter Notebook 翻訳スクリプト (ChatGPT対応)
+
+---
+
+## ✅ 概要
+
+以下のリポジトリをベースに改良しています:
+[https://github.com/WittmannF/jupyter-translate.git](https://github.com/WittmannF/jupyter-translate.git)
+
+---
+
+### 🌱 特徴
+
+* Markdown は **ChatGPT API (GPT-4.1)** で自然に翻訳
+* コード内 `print`, `#` は **Google Translator** を使用
+* **大型 Notebook も 10分程度で翻訳可能**
+
+  * Markdown: 500セル
+  * コード: 300セル
+
+---
+
+## ✅ 使い方
+
+1️⃣ **リポジトリをクローン**
+
+```bash
+git clone https://github.com/xxxxxx/jupyter-translate.git
+cd jupyter-translate
 ```
-conda deactivate
-conda remove --name jtranslate --all
-conda env create -f environment.yml
-conda activate jtranslate
+
+2️⃣ **仮想環境を作成**
+
+```bash
+python3 -m venv venv
 ```
 
+3️⃣ **仮想環境へ入る**
 
-**Note:** Copy and execute each line one by one—do not run them as a block. **Caution:** The googletrans API, as used by deep-translator, may face connectivity issues if you're behind a firewall. To improve accessibility in such environments, consider using the --delay option to introduce a pause between retries.
+```bash
+source venv/bin/activate        # Mac / Linux
+venv\Scripts\activate           # Windows
+```
 
-If you have any question or suggestion, use the *pull request* or discussion option in github.
+4️⃣ **依存ライブラリをインストール**
+
+```bash
+pip install -r requirements.txt
+```
+
+5️⃣ **OpenAI API キーを設定**
+
+`jupyter_translate.py` と同じ階層に `.env` を作成し記載:
+
+```
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
+```
+
+6️⃣ **翻訳対象の Notebook (.ipynb) を配置**
+
+7️⃣ **翻訳実行**
+
+日本語 → 英語の場合:
+
+```bash
+python3 -m jupyter_translate YOUR_NOTEBOOK_NAME.ipynb --source ja --target en
+```
+
+> Windows の場合は `python` に変更可。
+
+---
+
+## ✅ 翻訳カスタマイズ
+
+`prompt.json` は翻訳のトーンと品質を決める重要ファイルです。
+
+現在は日本語→英語に特化していますが、用途に応じて自由に変更してください。
+
+---
+
+## ✅ prompt.json の特徴
+
+* 短く自然な英語で分割翻訳
+* Markdown フォーマット維持
+* 明るくカジュアルなトーン
+* 中学生レベルの簡潔な英単語を使用
+* イディオム・比喩を適宜使用し、翻訳にパンチを加える
+* LaTeX の \$ は変数部分だけ使用
+* 教材は "tutorial" に統一
+* コードブロック終了時に \n を付与
+* "We" は使わない
+
+---
+
+## ✅ 感謝
+
+元のリポジトリを作成してくれた作者へ感謝します。
+
+---
+
+## ✅ ライセンス
+
+MIT License
+
+---
+
+✨ **Jupyter Translate** で快適な Notebook 翻訳ライフを！ ✨
