@@ -23,7 +23,7 @@ https://github.com/WittmannF/jupyter-translate.git
 
 1️⃣ **Clone this repo**
 ```bash
-git clone https://github.com/xxxxxx/jupyter-translate.git
+git clone https://github.com/HayatoHongo/jupyter-translate.git
 cd jupyter-translate
 ````
 
@@ -55,6 +55,8 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
 ```
 
 6️⃣ **Place the notebook you want to translate**
+
+Next to `jupyter_translate.py`, place the notebook you want to translate. :
 
 7️⃣ **Run the translation**
 
@@ -133,7 +135,7 @@ MIT License
 1️⃣ **リポジトリをクローン**
 
 ```bash
-git clone https://github.com/xxxxxx/jupyter-translate.git
+git clone https://github.com/HayatoHongo/jupyter-translate.git
 cd jupyter-translate
 ```
 
@@ -165,6 +167,8 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
 ```
 
 6️⃣ **翻訳対象の Notebook (.ipynb) を配置**
+
+`jupyter_translate.py` と同じ階層に 翻訳対象の Notebook (.ipynb) を配置:
 
 7️⃣ **翻訳実行**
 
