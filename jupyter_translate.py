@@ -7,9 +7,31 @@ from deep_translator import (
 from tqdm import tqdm  # For progress bar
 from time import sleep
 
+
 # ---- 追加インポート（ファイル冒頭付近に） -----------------
-import openai, backoff, os, time
+import openai, backoff, os, time, dotenv, logging
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()              # .env があれば自動で環境変数に反映
 # -----------------------------------------------------------
+
+
+# --- Add configure logging  -----------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+# Add load prompts
+_PROMPTS_PATH = Path(__file__).parent / "prompts.json"
+try:
+    with open(_PROMPTS_PATH, encoding="utf-8") as f:
+        PROMPTS = json.load(f)
+except Exception as e:
+    logging.error(f"Failed to load prompts from {_PROMPTS_PATH}: {e}")
+    raise
+# --------------------------------------------
 
 # Função para selecionar o tradutor com base no nome
 def get_translator(translator_name, src_language, dest_language):
@@ -69,93 +91,196 @@ def safe_translate(translator, text, retries=3, delay=10):
     raise Exception(f"Failed to translate after {retries} attempts.")
 
 def translate_markdown(text: str,
-                       translator,       # ※互換用・未使用
+                       translator,       # unused, for compatibility
                        delay: int,
-                       model: str = "gpt-3.5-turbo"
+                       dest_language: str,
+                       model: str = "gpt-4.1-mini"
                       ) -> str:
     """
     Translate one Markdown cell as-is with ChatGPT.
-    The whole *text* is sent in a single request together with
-    the base prompt “translate into English”.
+    Uses the destination language in the prompt, skipping pure-image cells.
     """
+    # 空セルはそのまま返却
     if not text.strip():
-        return text   # 空セルはそのまま返す
+        return text
 
-    # --- OpenAI key ---
+    # 画像だけのセルはスキップ
+    image_only_pattern = re.compile(
+        r'^(?:!\[[^\]]*\]\((?:data:image/[^)]+|attachment:[^)]+)\)\s*)+$'
+    )
+    if image_only_pattern.match(text.strip()):
+        return text
+
+    # OpenAI APIキー の取得と確認
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if not openai.api_key:
         raise RuntimeError("OPENAI_API_KEY environment variable not set")
 
-    # --- リトライ付き API 呼び出し ---------------------------
-    @backoff.on_exception(backoff.expo,
-                          (openai.error.RateLimitError,
-                           openai.error.APIError,
-                           openai.error.Timeout),
-                          max_tries=3)
-    def _chat_completion(markdown_src: str) -> str:
+    # ChatGPT へ再試行付きリクエストを送信
+    @backoff.on_exception(
+        backoff.expo,
+        (openai.error.RateLimitError, openai.error.APIError, openai.error.Timeout),
+        max_tries=3
+    )
+    def request_translation(content: str) -> str:
+        # Look up the system prompt
+        raw = PROMPTS["translation_system_prompt_lines"]
+        system_msg = "\n".join(raw)
+
+        if not system_msg:
+            # Log an error—and raise so you don’t send an empty or incorrect system prompt
+            logging.error(
+                "Missing 'translation_system_prompt' in prompts.json; "
+                "please add this key with your system instructions."
+            )
+            raise RuntimeError("translation_system_prompt not found in prompts.json")
+
         messages = [
-            # system プロンプトを使う方が安定する
-            {"role": "system",
-             "content": "You are a helpful assistant that translates text."},
-            {"role": "user",
-             "content": f"translate into English:\n\n{markdown_src}"}
+            {"role": "system",  "content": system_msg},
+            {"role": "user",    "content": f"Translate into {dest_language}:\n\n{content}"}
         ]
-        response = openai.ChatCompletion.create(
+        logging.debug(f"Calling OpenAI with dest_language={dest_language}")
+        resp = openai.ChatCompletion.create(
             model=model,
             messages=messages,
-            temperature=0.2  # 翻訳なので低め
+            temperature=1.0
         )
-        return response.choices[0].message.content.strip()
+        return resp.choices[0].message.content.strip()
 
-    translated = _chat_completion(text)
+    # 翻訳実行
+    translated = request_translation(text)
 
-    # Markdown セル末尾が改行で終わっていたら揃える
+    # 元のセル末尾改行を維持
     if text.endswith("\n") and not translated.endswith("\n"):
         translated += "\n"
 
     return translated
 
+
+import re
+import logging
+
+# 変換時のデバッグログを有効化
+logging.basicConfig(level=logging.DEBUG)
+
 def translate_code_comments_and_prints(code, translator, delay):
+    """
+    Translate comments, docstrings, and simple print statements in code with lookahead for docstrings.
+    Handles:
+      - '''...'''  blocks (multi-line and single-line)
+      - Inline comments (# ...), preserving TODO: prefix
+      - print(...)
+      - print_formatted_tensor(label, tensor)
+      - Skips f-string prints (print(f"..."))
+    """
+    logging.debug("Starting translate_code_comments_and_prints")
     if not code or code.isspace():
         return code
 
     def translate_text(text):
-        return safe_translate(translator, text, delay=delay)
+        logging.debug(f"Translating text: '{text[:30]}...'")
+        result = safe_translate(translator, text, delay=delay)
+        logging.debug(f"Translation result: '{result[:30]}...'")
+        return result
 
-    # Split line by line to handle multi-line code
     lines = code.split('\n')
-    translated_lines = []
-    
-    for line in lines:
-        # Handle comments (# ... )
-        if '#' in line:
-            code_part, comment_part = line.split('#', 1)
-            translated_comment = translate_text(comment_part.strip())
-            translated_line = f"{code_part}# {translated_comment}"
-            translated_lines.append(translated_line)
-            continue
-            
-        # Skip f-string print statements entirely to preserve variable references
-        if 'print(f' in line:
-            translated_lines.append(line)  # Keep f-string prints unchanged
-            continue
-            
-        # Handle regular print statements
-        if 'print(' in line and ('f"' not in line and "f'" not in line):
-            # Try to match regular print statements
-            match = re.search(r'print\(\s*["\'](.+?)["\']\s*(?:,.*?)?\)', line)
-            if match:
-                text_to_translate = match.group(1)
-                translated_text = translate_text(text_to_translate)
-                # Replace the original text with translated text
-                translated_line = line.replace(text_to_translate, translated_text)
-                translated_lines.append(translated_line)
+    result_lines = []
+    i = 0
+    total = len(lines)
+
+    while i < total:
+        line = lines[i]
+        logging.debug(f"Processing line {i}: {line}")
+
+        # --- Docstring detection with lookahead ---
+        start_match = re.match(r"(\s*)(?P<delim>'''|\"\"\")", line)
+        if start_match:
+            indent = start_match.group(1)
+            delim = start_match.group('delim')
+            logging.debug(f"Docstring start at line {i} with delimiter {delim}")
+            stripped = line.strip()
+            # Single-line docstring? (text on same line)
+            if stripped.endswith(delim) and len(stripped) > len(delim) * 2 - 2:
+                content = stripped[len(delim):-len(delim)]
+                translated = translate_text(content)
+                result_lines.append(f"{indent}{delim}{translated}{delim}")
+                i += 1
                 continue
-        
-        # If none of the above conditions match, keep the line as is
-        translated_lines.append(line)
-    
-    return '\n'.join(translated_lines)
+            # Multi-line docstring: collect inner lines
+            result_lines.append(line)  # opening line
+            i += 1
+            buffer = []
+            while i < total:
+                current = lines[i]
+                # closing delimiter detection
+                if current.strip().endswith(delim):
+                    break
+                buffer.append(current)
+                i += 1
+            # Translate the buffered docstring content
+            joined = '\n'.join(buffer)
+            logging.debug(f"Docstring block to translate (lines {i-len(buffer)}-{i-1}): '''{joined}'''")
+            translated_block = translate_text(joined)
+            # Re-emit translated lines, preserving indent
+            for translated_line in translated_block.split('\n'):
+                result_lines.append(f"{indent}{translated_line}")
+            # Append closing delimiter line
+            if i < total:
+                result_lines.append(lines[i])
+                logging.debug(f"Docstring end at line {i}")
+            i += 1
+            continue
+
+        # --- Inline comments ---
+        if '#' in line:
+            code_part, comment = line.split('#', 1)
+            comment = comment.strip()
+            logging.debug(f"Inline comment: {comment}")
+            todo = re.match(r'(TODO:)(.*)', comment, re.IGNORECASE)
+            if todo:
+                prefix, rest = todo.groups()
+                translated_rest = translate_text(rest.strip())
+                new_comment = f"{prefix} {translated_rest}"
+            else:
+                new_comment = translate_text(comment)
+            result_lines.append(f"{code_part}# {new_comment}")
+            i += 1
+            continue
+
+        # --- Skip f-string prints ---
+        if 'print(f' in line:
+            result_lines.append(line)
+            i += 1
+            continue
+
+        # --- Regular print(...) ---
+        print_match = re.search(r'print\(\s*("|\')(.+?)\1', line)
+        if print_match and 'print_formatted_tensor' not in line:
+            quote, txt = print_match.group(1), print_match.group(2)
+            translated_txt = translate_text(txt)
+            new_line = line.replace(f"{quote}{txt}{quote}", f"{quote}{translated_txt}{quote}")
+            result_lines.append(new_line)
+            i += 1
+            continue
+
+        # --- print_formatted_tensor(...) ---
+        tensor_match = re.search(r'print_formatted_tensor\(\s*("|\')(.+?)\1', line)
+        if tensor_match:
+            quote, txt = tensor_match.group(1), tensor_match.group(2)
+            translated_txt = translate_text(txt)
+            new_line = line.replace(f"{quote}{txt}{quote}", f"{quote}{translated_txt}{quote}")
+            result_lines.append(new_line)
+            i += 1
+            continue
+
+        # --- Default: unchanged ---
+        result_lines.append(line)
+        i += 1
+
+    logging.debug("Completed translate_code_comments_and_prints")
+    return '\n'.join(result_lines)
+
+
 
 def jupyter_translate(fname, src_language, dest_language, delay, translator_name, rename_source_file=False, print_translation=False):
     """
@@ -201,7 +326,7 @@ def jupyter_translate(fname, src_language, dest_language, delay, translator_name
             full_markdown = ''.join(cell['source'])
             
             # Translate the whole markdown content
-            translated_markdown = translate_markdown(full_markdown, translator, delay=delay)
+            translated_markdown = translate_markdown(full_markdown, translator, delay=delay, dest_language=dest_language)
             
             # Split the translated content back into lines
             data_translated['cells'][i]['source'] = translated_markdown.splitlines(True)  # keepends=True to preserve newlines
