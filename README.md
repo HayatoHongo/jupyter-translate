@@ -1,11 +1,3 @@
-以下は **英語版と日本語版を分けた `README.md` 完成版** です。
-
-そのままリポジトリに配置可能で、
-日英ユーザーどちらにも対応できる形に整えています。
-
----
-
-````markdown
 # 📘 Jupyter Translate: A Jupyter Notebook Translation Tool (ChatGPT Ready)
 
 ---
