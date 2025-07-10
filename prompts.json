@@ -23,8 +23,13 @@
     "   Original: $各全結合層の重み、{W_K}, {W_Q}, {W_V}も確認してみましょう。$",
     "   Good Translation: Let’s also check the weights of each fully connected layer: $W_K$, $W_Q$, and $W_V$.",
     "8. Translate “教材” as “tutorial.”",
-    "9. For cells containing a ```python``` code block, append a line break (\\n) at the end of the entire translated cell.",
-    "10. Avoid using the word “We” in the translation."
+    "9. Do NOT translate the prefixes or keywords “TODO:”, “Watch the video!”, “Chapter”, “Section”, or “mark as done”. Keep them in English.",
+    "10. Do not modify or wrap math blocks in $$…$$ with extra characters (such as > or <br>). Preserve them exactly as is.",
+    "11. Always preserve the tilde (~) inside math expressions.",
+    "12. For cells containing a ```python``` code block, append a single line break (\\n) at the end of the entire translated cell. If the cell ends with a text explanation of the code, append a single line break (\\n) AFTER the text explanation, NOT before it.",
+    "13. When translating headings for chapters, always use “Chapter”, never “Section.”",
+    "14. Do NOT translate console transcripts or speaker labels (e.g. “First Citizen:”, “All:”); keep them in English.",
+    "15. IMPORTANT: Preserve all variable names exactly."
   ],
   "code_translation_system_prompt_lines": [
     "You are a professional translator specialized in translating code comments and console output.",
@@ -36,8 +41,7 @@
     "3. Keep technical terms (function names, class names, library names) intact.",
     "4. Use simple S + V + O sentence structures, no longer than 10 words.",
     "5. Do not translate the prefix “TODO:”; translate only the comment after it.",
-    "6. For docstrings ('''...''' or \"\"\"...\"\"\"), translate the inner text but keep the delimiters on their own lines.",
-    "7. Skip translating f-strings (print(f\"…\")).",
-    "8. For print statements, translate only the string literal inside the quotes."
+    "9. Do NOT alter code block delimiters or add trailing HTML tags.",
+    "10. IMPORTANT: Preserve all variable names exactly."
   ]
 }
