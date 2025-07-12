@@ -7,6 +7,8 @@
 This project improves upon:  
 https://github.com/WittmannF/jupyter-translate.git
 
+How to use [Demo Video](https://youtu.be/magtumLJ9pA):
+
 ---
 
 ### 🌱 Features
@@ -67,6 +69,8 @@ python3 -m jupyter_translate YOUR_NOTEBOOK_NAME.ipynb --source ja --target en
 ```
 
 > On Windows, use `python` instead of `python3`.
+
+for more convenient command, please refer to the [original repository](https://github.com/WittmannF/jupyter-translate.git)
 
 ---
 
