@@ -1,4 +1,8 @@
-# 📘 Jupyter Translate: A Jupyter Notebook Translation Tool (ChatGPT Ready)
+# 📘 Jupyter Translate: A Jupyter Notebook Multi-Lingual Translation Tool (ChatGPT Ready)
+
+Quick Result: English to Japanese Translation.
+
+![quick_result_entoja.png](assets/quick_result_entoja.png)
 
 ---
 
@@ -9,15 +13,17 @@ https://github.com/WittmannF/jupyter-translate.git
 
 How to use [Demo Video](https://youtu.be/magtumLJ9pA):
 
----
-
 ### 🌱 Features
 
-- Natural translation for Markdown using **ChatGPT API (GPT-4.1)**  
-- Uses **Google Translator** for `print` and `#` in code  
-- **Handles large notebooks in about 10 minutes**  
-  - Markdown: 500 cells  
-  - Code: 300 cells
+- Translate your jupyter notebooks with best quality with OpenAI ChatGPT API.
+- Translation from ANY language into ANY language as far as ChatGPT knows.
+- Quick Demo Result: See the example from [English](https://colab.research.google.com/github/HayatoHongo/Everyones_nanoGPT/blob/main/Everyones_nanoGPT_TODO/Everyones_nanoGPT_colab_Chapter00_TODO.ipynb) to [Jpanese](https://colab.research.google.com/github/HayatoHongo/Everyones_nanoGPT_ja/blob/main/Everyones_nanoGPT_TODO_ja/Everyones_nanoGPT_colab_Chapter00_TODO_ja.ipynb).<br>
+It is diffucult to evaluate translation quality unless you speak Japanse, but it is not so impotant.<br>
+Please confirm that format and effect (like # for and ** ) for markdown is consistent.
+- You **must** adjust the prompt for optimal translation, please keep it in mind.
+- Commentout translation still has room for improvement. Currently, the prompt does not include the corresponding codes. I will soon improve later.
+
+
 
 ---
 
