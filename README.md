@@ -68,6 +68,14 @@ Next to `jupyter_translate.py`, place the notebook you want to translate. :
 
 7️⃣ **Run the translation**
 
+Before you translate, run this command in advance to ensure enough buffer.
+
+Jupyter Notebooks for educational purposes tend to have multiple images, resulting in big file sizes.
+
+```bash
+git config --global http.postBuffer 524288000
+```
+
 Japanese → English:
 
 ```bash
@@ -75,6 +83,12 @@ python3 -m jupyter_translate YOUR_NOTEBOOK_NAME.ipynb --source ja --target en
 ```
 
 > On Windows, use `python` instead of `python3`.
+
+Translate notebooks in directory
+
+```bash
+python3 -m jupyter_translate YOUR_NOTEBOOK_DIRECTORY/ --source ja --target en --directory
+```
 
 for more convenient command, please refer to the [original repository](https://github.com/WittmannF/jupyter-translate.git)
 
